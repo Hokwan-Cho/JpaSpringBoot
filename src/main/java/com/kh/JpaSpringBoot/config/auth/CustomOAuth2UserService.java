@@ -29,27 +29,16 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     private final UserRepository userRepository;
     private final HttpSession httpSession;
 
-    @SneakyThrows
     @Override
-    public OAuth2User loadUser(@NotNull OAuth2UserRequest userRequest) throws OAuth2AuthenticationException{
-
-        System.out.println("getClientRegistration : " + userRequest.getClientRegistration());
-        System.out.println("getAccessToken : " +userRequest.getAccessToken().getTokenValue());
-
+    public OAuth2User loadUser( OAuth2UserRequest userRequest) throws OAuth2AuthenticationException{
 
         OAuth2UserService<OAuth2UserRequest, OAuth2User>  delegate = new DefaultOAuth2UserService();
         OAuth2User oAuth2User = delegate.loadUser(userRequest);
+
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
         String userNameAttributeName = userRequest.getClientRegistration().getProviderDetails().getUserInfoEndpoint().getUserNameAttributeName();
 
         OAuthAttributes attributes = OAuthAttributes.of(registrationId, userNameAttributeName, oAuth2User.getAttributes());
-
-
-        System.out.println("@@@@@@@@@@@@@");
-        System.out.println(registrationId);
-        System.out.println(userNameAttributeName);
-
-
         User user = saveOrUpdate(attributes);
 
         httpSession.setAttribute("user", new SessionUser(user));
@@ -60,7 +49,6 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
     private User saveOrUpdate(OAuthAttributes attributes){
         User user = userRepository.findByEmail(attributes.getEmail()).map(entity -> entity.update(attributes.getName(), attributes.getPicture())).orElse(attributes.toEntity());
-        System.out.println("$$$$$$$$$$$$$$$$");
         return userRepository.save(user);
     }
 }
